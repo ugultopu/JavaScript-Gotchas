@@ -47,3 +47,55 @@ You cannot create an array of arrays using [`Array.prototype.fill()`]. Specifica
 Instead, you can use `Array.from(Array(5), () => Array(3).fill(null))` to get the expected behavior.
 
 [`Array.prototype.fill()`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill
+
+----
+
+You should never modify in-place an object in JavaScript. If you modify an object in-place that's passed into a function, that modification affects the object where the function is called from as well. Example:
+
+    const a = [1,2,3];
+    const b = [4,5,6];
+
+    function x(p) {
+      p.unshift(0);
+      // Or, similarly:
+      // for (let i = 0; i < p.length; i++) p[i]++;
+    }
+
+    function y(p) {
+      [0, ...p];
+    }
+
+    // Shows [1, 2, 3]
+    a
+    x(a)
+    // Shows [0, 1, 2, 3]
+    a
+
+
+    // Shows [4, 5, 6]
+    b
+    y(b)
+    // Shows [4, 5, 6]
+    b
+
+This is, in fact, the same behavior with Java. Example Java code:
+
+    import java.util.Arrays;
+
+    public class HelloWorld {
+
+        static void increment(int[] arr) {
+            for (int i = 0; i < arr.length; i++) arr[i]++;
+        }
+
+        public static void main(String []args) {
+            int[] a = {1,2,3};
+            // Prints [1, 2, 3]
+            System.out.println(Arrays.toString(a));
+            HelloWorld.increment(a);
+            // Prints [2, 3, 4]
+            System.out.println(Arrays.toString(a));
+        }
+    }
+
+In short, in most (all?) object-oriented programming languages, if you modify an object in-place, the modifications are reflected in the calling context. The reason is that the objects are actually passed-by-reference. That is, instead of passing a copy of the object to the function, a _copy of the reference_ is passed to the function. The copy of the reference simply points to the same original object. Hence, any modifications within the function actually modify the object.
