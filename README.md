@@ -10,3 +10,40 @@ The code above will print "a's length is not 3!". Because of a simple mistyping,
 The solution to this is to [use TypeScript][My answer about non-existent property access]. Had we used TypeScript, we would have gotten an error right on the "compile time" (that is, on our editor before we even run the code) saying `Property 'len' does not exist on type 'number[]'` and underlining the erroneous part of the code with red squiggles.
 
 [My answer about non-existent property access]: https://stackoverflow.com/a/63548095/3395831
+
+----
+
+You cannot create an array of arrays using [`Array.prototype.fill()`]. Specifically, you cannot create an array of objects using `Array.prototype.fill()`, because every element in the array will be the _exact same object_. Hence, modifying _any_ element of the array modifies _every_ element of the array, since every element is the _exact same element_ (same reference). Example:
+
+    const a = Array(5).fill(Array(3).fill(null));
+    /*
+     * a is:
+     *
+     * [[null, null, null]
+     *  [null, null, null]
+     *  [null, null, null]
+     *  [null, null, null]
+     *  [null, null, null]]
+     */
+    a[2][1] = 'A';
+    /*
+     * a is:
+     *
+     * [[null, "A", null]
+     *  [null, "A", null]
+     *  [null, "A", null]
+     *  [null, "A", null]
+     *  [null, "A", null]]
+     *
+     * instead of
+     *
+     * [[null, null, null]
+     *  [null, null, null]
+     *  [null, "A", null]
+     *  [null, null, null]
+     *  [null, null, null]]
+     */
+
+Instead, you can use `Array.from(Array(5), () => Array(3).fill(null))` to get the expected behavior.
+
+[`Array.prototype.fill()`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill
