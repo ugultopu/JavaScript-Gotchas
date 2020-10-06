@@ -99,3 +99,40 @@ This is, in fact, the same behavior with Java. Example Java code:
     }
 
 In short, in most (all?) object-oriented programming languages, if you modify an object in-place, the modifications are reflected in the calling context. The reason is that the objects are actually passed-by-reference. That is, instead of passing a copy of the object to the function, a _copy of the reference_ is passed to the function. The copy of the reference simply points to the same original object. Hence, any modifications within the function actually modify the object.
+
+---
+
+Optional chaining operator (`?.`) should be used AFTER the element that will be potentially `null`/`undefined`, NOT before. Example:
+
+WRONG:
+
+```javascript
+const desiredProp = someVariable?.somePotentiallyNonExistentProperty.desiredProp;
+```
+
+RIGHT:
+
+```javascript
+const desiredProp = someVariable.somePotentiallyNonExistentProperty?.desiredProp;
+```
+
+The reason is that optional chaining operator protects against property accesses on non-existing things (objects, properties, etc.) That is, you place the optional chaining operator NOT BEFORE the thing that has the potential to be non-existant, but AFTER it. The right version of the code above means that "we are sure that `someVariable` will never be non-existent, even if it just an object with no properties in it (that is, an empty object)".
+
+Note that in order to go deeper in the tree of an object, you DO NOT have to use the optional chaining repeatedly. Just using once after the property that has the potential to be non-existent is enough. Example:
+
+```javascript
+const a = {p1: {p2: {p3: 'v3'}}};
+const b = {};
+// 'c' is a variable that can potentially be 'a' or 'b'.
+let c;
+// Following works perfectly. Essentially it means "c might not have the
+// 'p1' prop but if it does, then 'p1' prop will, for sure, have the
+// 'p2' prop and 'p2' prop will, in turn, for sure have the 'p3' prop".
+c = a;
+// Works. Prints "v3".
+console.log(c.p1?.p2.p3);
+c = b;
+// Works. Prints "undefined". That is, it does not throw "TypeError:
+// Cannot read property ... of ... at ...".
+console.log(c.p1?.p2.p3);
+```
