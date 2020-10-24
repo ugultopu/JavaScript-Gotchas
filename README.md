@@ -146,3 +146,160 @@ console.log(c.p1?.p2.p3);
 ```
 
 The reason that optional chaining works this way is because of "short-circuiting". That is, if the expression *before* the optional chaining operator is non-existent (aka "nullish", that is, `undefined` or `null`), the expression immediately returns `undefined` without even continuing to evaluate the rest of the expression (the rest of the expression is everything that's on the right or bottom side of the same expression). This behavior is named "short-circuiting", and it is the reason that when we set `c = b;` in the example above, `c.p1?.p2.p3` simply returns `undefined` instead of causing a `TypeError` to be thrown.
+
+----
+
+On a (web) browser, DON'T USE `console.log` to inspect something. It is broken. When you log something using `console.log` and then expand it using the little arrow on the output of `console.log`, the values shown will be the values of the logged object _at the time that you have expanded the `console.log` output_. They won't be the values at the time that the object was logged.
+
+That is, say that you logged something using `console.log`. Later, the program changed (mutated) that variable. When you go to the place where the log is and click on the little arrow to expand it, the values shown there are not the values at the time of logging. They are the values at the time that you expand it (by clicking on that little arrow near the log). That is, if you expand it after the program finished execution, it means that the values shown will be the final version of the variable, not the version at the time of logging. Hence, `console.log` cannot be used to inspect a variable.
+
+Even though the little blue information box when we expand a console log says "Value below was evaluated just now", the truth is, value shown when we expand a console log is evaluated at "the first time when we expand a console log". If we contract a log and then later expand it again, the value will not be re-evaluated. The value obtained the first time when we expanded a log will be shown. Below is a demonstration of this:
+
+![console.log demonstration](assets/console-log.gif)
+
+Apparently, this has been the behavior the whole time. Here are some Stack Overflow questions from 2010s:
+
+[Can't access object property, even though it shows up in a console log](https://stackoverflow.com/questions/17546953)
+
+[console.log() shows the changed value of a variable before the value actually changes](https://stackoverflow.com/questions/11284663)
+
+[Is Chrome's JavaScript console lazy about evaluating arrays?](https://stackoverflow.com/questions/4057440)
+
+[console.log() async or sync?](https://stackoverflow.com/questions/23392111)
+
+[Bizarre console.log behaviour in Chrome Developer Tools](https://stackoverflow.com/questions/4198912)
+
+[javascript constructor with google chrome bugged?](https://stackoverflow.com/questions/8007397)
+
+Other articles talking about this issue:
+
+[Logging JavaScript Objects](https://code-maven.com/logging-javascript-objects)
+
+[Please stop using console.log(), it’s broken](https://hackernoon.com/please-stop-using-console-log-its-broken-b5d7d396cf15)
+
+A quick and "good enough for most cases" workaround is to serialize and deserialize the object and then log it:
+
+```javascript
+function log(object) {
+  console.log(JSON.parse(JSON.stringify(object)));
+}
+```
+
+A more robust solution is to deep clone an object and then simply log the clone. This example is using the [lodash library] to deep clone an object:
+
+```javascript
+function log(object) {
+  console.log(require('lodash.clonedeep')(object));
+}
+```
+
+Note that deep cloning still does not work to take a snapshot of object prototype (the `__proto__` property). As far as I can tell, for now, there is no way to take a snapshot of the `__proto__` property:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module">
+    import cloneDeep from 'https://cdn.jsdelivr.net/npm/lodash-es@4.17.15/cloneDeep.js';
+
+    function log(object) {
+      console.log(cloneDeep(object));
+    }
+
+    function A() {}
+
+    const a = new A();
+    log(a);
+  </script>
+</head>
+</html>
+```
+
+When we expand the log output of the code above, we observe the following output:
+
+<pre>
+A {}
+  __proto__:
+    constructor: ƒ A()
+      arguments: (...)
+      caller: (...)
+      length: 0
+      name: "A"
+      <b>prototype: {constructor: ƒ}:</b>
+        ...
+      ...
+    __proto__: Object:
+      ...
+</pre>
+
+Note how `a.__proto__.constructor.prototype` has a value (that is, it is not null).
+
+Now, we add the line `A.prototype = null;` after the last line, save the HTML file and refresh the web page. When we expand the console output, we observe:
+
+<pre>
+A {}
+  __proto__:
+    constructor: ƒ A()
+      arguments: (...)
+      caller: (...)
+      length: 0
+      name: "A"
+      <b>prototype: null</b>
+      ...
+    __proto__: Object:
+      ...
+</pre>
+
+Again, the same issue with `console.log` without deep cloning. I can tell that this is the same (or very similar) issue with that, because instead of entering the JavaScript code on an HTML file and opening the HTML file on a browser, when we just open a browser console without any HTML file and run:
+
+```javascript
+function A() {}
+
+const a = new A();
+
+console.log(a);
+```
+
+and then expand the log value, we observe that `a.__proto__.constructor.prototype` is not null. Then, when we collapse the log output, execute the line `A.prototype = null;` and re-expand the log output, we observe that `a.__proto__.constructor.prototype` is still not null.
+
+On the other hand, if we just execute:
+
+```javascript
+function A() {}
+
+const a = new A();
+
+console.log(a);
+
+A.prototype = null;
+```
+
+and then check out the log output by expanding it, we observe that `a.__proto__.constructor.prototype` is null. Hence, this is again the same issue. That is, the log output shown in expanded view are evaluated _at the time that we expand it_. Not at the time of logging. Here is a GIF that demonstrates this:
+
+![console.log proto demonstration](assets/console-log_proto_demonstration.gif)
+
+On another note, even the [MDN notes] suggest not to use `console.log` directly. They suggest to use at least `JSON.stringify`. The same page also says:
+
+> Please be warned that if you log objects in the latest versions of Chrome and Firefox what you get logged on the console is a reference to the object, which is not necessarily the 'value' of the object at the moment in time you call console.log(), but it is the value of the object at the moment you open the console.
+
+[This is the issue][Chromium issue] that I have created on Chromium bug tracker to change the on hover message on the little blue information box that appears when we expand a `console.log` output from "Value below was evaluated just now" to "Value below was evaluated the first time that you have expanded the log output".
+
+One more note: You might think that using `Object.entries` will be a solution to this, but `Object.entries` is essentially the same thing as making a shallow copy. Example:
+
+```javascript
+const arr = {a: [0,1,2,3]};
+arr.a[0] = -1;
+console.log(Object.entries(arr));
+arr.a[1] = -1;
+console.log(Object.entries(arr));
+arr.a[2] = -1;
+console.log(Object.entries(arr));
+arr.a[3] = -1;
+console.log(Object.entries(arr));
+```
+
+The problem persists here as well. When you expand the log outputs, you observe all elements of the array are -1, instead of the values at the time that they were logged.
+
+[lodash library]: https://lodash.com/
+[MDN notes]: https://developer.mozilla.org/en-US/docs/Web/API/Console/log#Logging_objects
+[Chromium issue]: https://bugs.chromium.org/p/chromium/issues/detail?id=1141675
