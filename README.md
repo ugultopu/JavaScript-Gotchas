@@ -303,3 +303,30 @@ The problem persists here as well. When you expand the log outputs, you observe 
 [lodash library]: https://lodash.com/
 [MDN notes]: https://developer.mozilla.org/en-US/docs/Web/API/Console/log#Logging_objects
 [Chromium issue]: https://bugs.chromium.org/p/chromium/issues/detail?id=1141675
+
+----
+
+You don't need to wrap an invocation of a "constructor function" within parentheses to access a property on the returned (created / initialized) object. It is redundant. That is, it will work just fine without wrapping it:
+
+```javascript
+'use strict';
+
+function a() {
+  this.x = 1;
+  this.y = 2;
+}
+
+a();
+// Gives:
+// Uncaught TypeError: Cannot set property 'x' of undefined
+
+// CORRECT:
+new a().x
+// Evaluates to 1. Hence, this shows that we don't need to wrap an
+// initialization statement within parentheses in order to access a
+// property on the returned (created / initialized) object.
+
+// REDUNDANT / NEEDLESS:
+(new a()).x
+// Again, evaluates to 1, but it is pointless / redundant.
+```
