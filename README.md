@@ -330,3 +330,41 @@ new a().x
 (new a()).x
 // Again, evaluates to 1, but it is pointless / redundant.
 ```
+
+----
+
+You cannot add properties to primitive types
+============================================
+
+```javascript
+let a = 1;
+a.someProp;
+// undefined
+a.someProp = 5;
+// 5
+a.someProp;
+// undefined
+
+// Another example
+let b = 'hello';
+b.anotherProp;
+// undefined
+b.anotherProp = 10;
+// 10
+b.anotherProp;
+// undefined
+```
+
+The [primitive types] in JavaScript are:
+- string
+- number
+- boolean
+- symbol
+- bigint
+- undefined
+
+Although `null` seems like a primitive, it is a special case of the Object type, though it behaves like a primitive for most purposes.
+
+Everything else are instances of the Object type or a descendant of the Object type.
+
+[primitive types]: https://developer.mozilla.org/en-US/docs/Glossary/Primitive
