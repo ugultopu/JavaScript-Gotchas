@@ -368,3 +368,88 @@ Although `null` seems like a primitive, it is a special case of the Object type,
 Everything else are instances of the Object type or a descendant of the Object type.
 
 [primitive types]: https://developer.mozilla.org/en-US/docs/Glossary/Primitive
+
+----
+
+How does the array index operator (the square bracket operator) work in JavaScript?
+===================================================================================
+Well, it doesn't work because there is no such thing in JavaScript. That is, there is no special square bracket operator for accessing array indices in JavaScript. But how? Aren't we able to access the arrays using syntax like `someArray[someInteger]`? Well, yes we do, but that is not a special syntax defined to access the indices of an array. It is nothing but simply the good old "bracket notation" for accessing _object properties_.
+
+Bracket notation is an alternative to dot notation to access object properties. In JavaScript, an array is nothing but an object. When we use bracket notation, if there is an identifier (a variable name, etc.) inside the brackets, then the identifier is resolved. If its value is not a string or a symbol, then its value is _[coerced]_ into a string and then JavaScript tries to find a property whose name is equal to that string.
+
+That is, when we write `someObject[5]`, 5 is not an identifier, hence its value not resolved. It is not a string or symbol either, so its value must be coerced into a string. It is a number. Coercing it into a string yields '5'. Hence, JavaScript searches for a property named '5' in `someObject` and if it finds that property, it returns its value. If not, it returns `undefined`.
+
+To prove that this is indeed the case, let's define an array:
+
+```javascript
+let a = ['x', 'y', 'z'];
+Object.getOwnPropertyDescriptors(a);
+// Returns:
+// {
+//   '0': { value: 'x', writable: true, enumerable: true, configurable: true },
+//   '1': { value: 'y', writable: true, enumerable: true, configurable: true },
+//   '2': { value: 'z', writable: true, enumerable: true, configurable: true },
+//   length: { value: 3, writable: true, enumerable: false, configurable: false }
+// }
+```
+
+As you can observe, an "array" in JavaScript is actually nothing but an object which has properties named 0, 1, 2, etc. That is, property names are strings which represent integers. These property names "masquerade" as if they are array indices, but they are not. What they really are is that they are simply regular object properties which can be "parsed into" an integer.
+
+Another feature in JavaScript is that it is possible to access a string's characters by index. That is:
+
+```javascript
+let a = 'hello';
+a[2];
+// Returns:
+// 'l'
+```
+
+This is again not a "special syntax" or something for strings (or "array-like elements" or something, since there is no such thing as "array-like elements" in JavaScript) but it is simply the good old object property access using bracket notation. Examining the properties of a string clarifies things:
+
+```javascript
+let a = 'hello';
+Object.getOwnPropertyDescriptors(a);
+// Returns:
+// {
+//   '0': { value: 'h', writable: false, enumerable: true, configurable: false },
+//   '1': { value: 'e', writable: false, enumerable: true, configurable: false },
+//   '2': { value: 'l', writable: false, enumerable: true, configurable: false },
+//   '3': { value: 'l', writable: false, enumerable: true, configurable: false },
+//   '4': { value: 'o', writable: false, enumerable: true, configurable: false },
+//   length: { value: 5, writable: false, enumerable: false, configurable: false }
+// }
+```
+
+Again, as you can observe, a string has properties named '0', '1', '2', etc. and the value of the each of these properties is the character in the string that is at the respective index. But wait! Isn't a string in JavaScript a primitive? How come it has properties? Well, true, a string in JavaScript is a primitive and hence, it cannot have any properties. However, if an object is passed to a places where an object is needed, JavaScript does something called [autoboxing]. That is, it creates the object version (the wrapper) of that primitive.
+
+Let's give one more example from [MDN] to the type coercion on object properties. As we said, object properties are either strings or symbols. Hence, any other thing given as the object property must be coerced into a string. The following is another example to this:
+
+```javascript
+let foo = {a: 1},
+    bar = {b: 2},
+    baz = {};
+
+baz[foo] = 'hello';
+baz
+// Returns:
+// { '[object Object]': 'hello' }
+baz[bar]
+// Returns:
+// 'hello'
+```
+
+What's happening above is, when we write `baz[foo] = 'hello';`, JavaScript detects that `foo` is an identifier. Hence, JavaScript tries to resolve its value. It resolves it and detects that it is an object. Now, that value (`foo`'s value, which is an object) is being used as a property name. As we have indicated, object properties can only be strings or symbols, anything else must be _coerced into_ a string. Hence JavaScript coerces `foo` (`foo`'s value, which is an object) into a string. Coercing an object into a string _always_ gives the string `[object Object]` for any object, regardless of the complexity of the object or the property names present in the object. Hence, the line `baz[foo] = 'hello';` results in a new property named `[object Object]` is being created in `baz` and having the value `'hello'` assigned to it. Essentially, `baz[foo] = 'hello';` is equivalent to:
+
+```javascript
+baz['[object Object]'] = 'hello';
+```
+
+Then, we have the line `baz[bar]`. Here, JavaScript detects that `bar` is and identifier and hence resolves it. It realizes that it refers to an object. It then realizes that it is being used as an object property. Hence, it _coerces_ it into a string. As we have indicated, coercing _any_ object (regardless of the complexity, etc. of the object) into a string results in the string `[object Object]`. Hence, the line `baz[bar]` is equivalent to:
+
+```javascript
+baz['[object Object]']
+```
+
+[coerced]: https://developer.mozilla.org/en-US/docs/Glossary/Type_coercion
+[autoboxing]: https://egghead.io/lessons/javascript-autoboxing-primitive-types-in-javascript
+[MDN]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors
