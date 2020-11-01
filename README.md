@@ -420,7 +420,7 @@ Object.getOwnPropertyDescriptors(a);
 // }
 ```
 
-Again, as you can observe, a string has properties named '0', '1', '2', etc. and the value of the each of these properties is the character in the string that is at the respective index. But wait! Isn't a string in JavaScript a primitive? How come it has properties? Well, true, a string in JavaScript is a primitive and hence, it cannot have any properties. However, if an object is passed to a places where an object is needed, JavaScript does something called [autoboxing]. That is, it creates the object version (the wrapper) of that primitive.
+Again, as you can observe, a string has properties named '0', '1', '2', etc. and the value of the each of these properties is the character in the string that is at the respective index. But wait! Isn't a string in JavaScript a primitive? How come it has properties? Well, true, a string in JavaScript is a primitive and hence, it cannot have any properties. However, if a primitive is passed to a places where an object is needed, JavaScript does something called [autoboxing]. That is, it creates the object version (the wrapper) of that primitive.
 
 Let's give one more example from [MDN] to the type coercion on object properties. As we said, object properties are either strings or symbols. Hence, any other thing given as the object property must be coerced into a string. The following is another example to this:
 
@@ -453,3 +453,97 @@ baz['[object Object]']
 [coerced]: https://developer.mozilla.org/en-US/docs/Glossary/Type_coercion
 [autoboxing]: https://egghead.io/lessons/javascript-autoboxing-primitive-types-in-javascript
 [MDN]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors
+
+----
+
+`this` does not work the same for arrow functions as it does for conventional functions
+=======================================================================================
+`this` works as expected in "conventional" functions. "Conventional" functions are all "non-arrow functions". Example:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+};
+console.log(`date is ${date}`);
+// date is [object Object]
+date.toString = function() {
+  return `${this.year}.${this.month}.${this.day}`;
+};
+console.log(`date is ${date}`);
+// date is 1990.8.16
+```
+
+Another example:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString() { return `${this.year}.${this.month}.${this.day}` },
+};
+console.log(`date is ${date}`);
+// date is 1990.8.16
+```
+
+However, when we use an arrow function:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+};
+console.log(`date is ${date}`);
+// date is [object Object]
+date.toString = () => `${this.year}.${this.month}.${this.day}`
+console.log(`date is ${date}`);
+// date is undefined.undefined.undefined
+```
+
+Similarly:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString: () => `${this.year}.${this.month}.${this.day}`,
+};
+console.log(`date is ${date}`);
+// date is undefined.undefined.undefined
+```
+
+Examining what exactly happens when we use an arrow function gives us a better idea:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString: () => { console.log('this is', this) },
+};
+date.toString();
+// this is <we observe that `this` is the global object. That is, `this` is the object named "global" on Node.JS, and "window" on a web browser>
+```
+
+The same example when we use a conventional function:
+
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString() { console.log('this is', this) },
+};
+date.toString();
+// this is { year: 1990, month: 8, day: 16, toString: [Function: toString] }
+```
+
+So, we observe that `this` value is set as we expect we we use a "conventional function", and when we use an arrow function, `this` value is just the global object.
+
+`this` is not set to the caller in arrow functions. In arrow functions, `this` is searched in the lexical scope, as if it was another, regular "free" variable in a "closure".
+
+There are more differences in arrow functions compared to regular functions. To learn more about them, you can [visit the MDN page](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions).
