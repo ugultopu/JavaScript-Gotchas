@@ -375,7 +375,7 @@ How does the array index operator (the square bracket operator) work in JavaScri
 ===================================================================================
 Well, it doesn't work because there is no such thing in JavaScript. That is, there is no special square bracket operator for accessing array indices in JavaScript. But how? Aren't we able to access the arrays using syntax like `someArray[someInteger]`? Well, yes we do, but that is not a special syntax defined to access the indices of an array. It is nothing but simply the good old "bracket notation" for accessing _object properties_.
 
-Bracket notation is an alternative to dot notation to access object properties. In JavaScript, an array is nothing but an object. When we use bracket notation, if there is an identifier (a variable name, etc.) inside the brackets, then the identifier is resolved. If its value is not a string or a symbol, then its value is _[coerced]_ into a string and then JavaScript tries to find a property whose name is equal to that string.
+Bracket notation is an alternative to dot notation to access object properties. In JavaScript, an array is nothing but an object. When we use bracket notation, if there is an identifier (a variable name, etc.) inside the brackets, then the value of the identifier is resolved. If its value is not a string or a symbol, then its value is _[coerced]_ into a string and then JavaScript tries to find a property whose name is equal to that string.
 
 That is, when we write `someObject[5]`, 5 is not an identifier, hence its value not resolved. It is not a string or symbol either, so its value must be coerced into a string. It is a number. Coercing it into a string yields '5'. Hence, JavaScript searches for a property named '5' in `someObject` and if it finds that property, it returns its value. If not, it returns `undefined`.
 
@@ -420,7 +420,7 @@ Object.getOwnPropertyDescriptors(a);
 // }
 ```
 
-Again, as you can observe, a string has properties named '0', '1', '2', etc. and the value of the each of these properties is the character in the string that is at the respective index. But wait! Isn't a string in JavaScript a primitive? How come it has properties? Well, true, a string in JavaScript is a primitive and hence, it cannot have any properties. However, if a primitive is passed to a places where an object is needed, JavaScript does something called [autoboxing]. That is, it creates the object version (the wrapper) of that primitive.
+Again, as you can observe, a string has properties named '0', '1', '2', etc. and the value of the each of these properties is the character in the string that is at the respective index. But wait! Isn't a string in JavaScript a primitive? How come it has properties? Well, true, a string in JavaScript is a primitive and hence, it cannot have any properties. However, if a primitive is passed to a place where an object is needed, JavaScript does something called [autoboxing]. That is, it creates the object version (the wrapper) of that primitive.
 
 Let's give one more example from [MDN] to the type coercion on object properties. As we said, object properties are either strings or symbols. Hence, any other thing given as the object property must be coerced into a string. The following is another example to this:
 
@@ -438,13 +438,13 @@ baz[bar]
 // 'hello'
 ```
 
-What's happening above is, when we write `baz[foo] = 'hello';`, JavaScript detects that `foo` is an identifier. Hence, JavaScript tries to resolve its value. It resolves it and detects that it is an object. Now, that value (`foo`'s value, which is an object) is being used as a property name. As we have indicated, object properties can only be strings or symbols, anything else must be _coerced into_ a string. Hence JavaScript coerces `foo` (`foo`'s value, which is an object) into a string. Coercing an object into a string _always_ gives the string `[object Object]` for any object, regardless of the complexity of the object or the property names present in the object. Hence, the line `baz[foo] = 'hello';` results in a new property named `[object Object]` is being created in `baz` and having the value `'hello'` assigned to it. Essentially, `baz[foo] = 'hello';` is equivalent to:
+What's happening above is, when we write `baz[foo] = 'hello';`, JavaScript detects that `foo` is an identifier. Hence, JavaScript tries to resolve its value. It resolves it's value and detects that the value is an object. As we have indicated, object properties can only be strings or symbols, anything else must be _coerced into_ a string. Hence JavaScript coerces `foo` (`foo`'s value, which is an object) into a string. Coercing an object (any object) into a string _always_ gives the string `[object Object]` for any object, regardless of the complexity of the object or the property names present in the object. Hence, the line `baz[foo] = 'hello';` results in a new property named `[object Object]` is being created in `baz` and having the value `'hello'` assigned to it. Essentially, `baz[foo] = 'hello';` is equivalent to:
 
 ```javascript
 baz['[object Object]'] = 'hello';
 ```
 
-Then, we have the line `baz[bar]`. Here, JavaScript detects that `bar` is and identifier and hence resolves it. It realizes that it refers to an object. It then realizes that it is being used as an object property. Hence, it _coerces_ it into a string. As we have indicated, coercing _any_ object (regardless of the complexity, etc. of the object) into a string results in the string `[object Object]`. Hence, the line `baz[bar]` is equivalent to:
+Then, we have the line `baz[bar]`. Here, JavaScript detects that `bar` is and identifier and hence resolves its value. It realizes that `bar` refers to an object. It then realizes that it is being used as an object property. Hence, it _coerces_ it into a string. As we have indicated, coercing _any_ object (regardless of the complexity, etc. of the object) into a string results in the string `[object Object]`. Hence, the line `baz[bar]` is equivalent to:
 
 ```javascript
 baz['[object Object]']
@@ -526,7 +526,7 @@ const date = {
   toString: () => { console.log('this is', this) },
 };
 date.toString();
-// this is <we observe that `this` is the global object. That is, `this` is the object named "global" on Node.JS, and "window" on a web browser>
+// this is <the global object. That is, `this` is the object named "global" on Node.JS, and "window" on a web browser>
 ```
 
 The same example when we use a conventional function:
@@ -547,3 +547,180 @@ So, we observe that `this` value is set as we expect we we use a "conventional f
 `this` is not set to the caller in arrow functions. In arrow functions, `this` is searched in the lexical scope, as if it was another, regular "free" variable in a "closure".
 
 There are more differences in arrow functions compared to regular functions. To learn more about them, you can [visit the MDN page](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions).
+
+----
+
+`const` does not provide anything for "immutability"
+====================================================
+```javascript
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString() { return `${this.year}.${this.month}.${this.day}` },
+};
+
+function person(name, DATE_OF_BIRTH) {
+  const dateOfBirth = DATE_OF_BIRTH;
+  return {
+    identify() {
+      console.log(`My name is ${name} and I was born at ${dateOfBirth}`);
+    },
+  }
+}
+
+const p = person('harry', date);
+p.identify();
+// My name is harry and I was born at 1990.8.16
+date.year = 1960;
+p.identify();
+// My name is harry and I was born at 1960.8.16
+```
+
+As you can observe, even though we did not change anything in the person object at all, and even though we have declared the `dateOfBirth` as `const` in `person`, the value of the `dateOfBirth` still changed when we _mutated_ the `date` object. This is simply because when we pass the `date` to the person constructor, a _reference_ of the date is passed, since date is an object (well, a _copy of the reference_ is passed but where that reference _points to_ in the memory is the same location). Since the location pointed by both the `date` variable (the `date` `const`) outside the constructor and the `dateOfBirth` variable (the `dateOfBirth` `const`) in the person object are the same location, mutating what is pointed to by either of them mutates "both". Well, it does not mutate "both". It mutates a single object and since both references point _to the same location_, after mutation, they report the new, mutated version of the object. So, all `const` does in `person` is that it prevents _re-assignment_ to the `dateOfBirth` "field". That is, for example we cannot have a `reassignDateOfBirth` method in person like:
+
+```javascript
+function person(name, DATE_OF_BIRTH) {
+  const dateOfBirth = DATE_OF_BIRTH;
+  return {
+    identify() {
+      console.log(`My name is ${name} and I was born at ${dateOfBirth}`);
+    },
+    reassignDateOfBirth(newDateOfBirth) {
+      // WON'T WORK. Will get "TypeError: Assignment to constant variable." exception
+      dateOfBirth = newDateOfBirth;
+    }
+    mutateDateOfBirth(newDateOfBirth) {
+      // Will work perfectly fine
+      dateOfBirth.year = newDateOfBirth.year;
+      dateOfBirth.month = newDateOfBirth.month;
+      dateOfBirth.day = newDateOfBirth.day;
+    }
+  }
+}
+```
+
+Hence, using `const` does not have much of a point. A better idea might be to deep clone each argument in the constructor:
+
+```javascript
+function person(name, DATE_OF_BIRTH) {
+  var fields = {
+    // Let's assume `cloneDeep` is a function available somehow (either
+    // defined by us, or acquired from a library).
+    name: cloneDeep(name),
+    dateOfBirth: cloneDeep(DATE_OF_BIRTH),
+  }
+  return {
+    identify() {
+      console.log(`My name is ${fields.name} and I was born at ${fields.dateOfBirth}`);
+    },
+  }
+}
+```
+
+Or, even a better idea might be to not clone anything at all, but always be aware of the mutability of the objects and hence, take extra care while programming not to mutate any objects except within a method. That is, perform the mutations only while the execution is within a method, and not perform any mutations when the code is outside them. However, this is not a complete solution either. Example:
+
+```javascript
+function person(name, DATE_OF_BIRTH) {
+  const dateOfBirth = DATE_OF_BIRTH;
+  return {
+    identify() {
+      console.log(`My name is ${name} and I was born at ${dateOfBirth}`);
+    },
+    mutateDateOfBirth(newDateOfBirth) {
+      dateOfBirth.year = newDateOfBirth.year;
+      dateOfBirth.month = newDateOfBirth.month;
+      dateOfBirth.day = newDateOfBirth.day;
+    },
+  }
+}
+
+const date = {
+  year: 1990,
+  month: 8,
+  day: 16,
+  toString() { return `${this.year}.${this.month}.${this.day}` },
+};
+
+const p1 = person('harry', date);
+p1.identify();
+// My name is harry and I was born at 1990.8.16
+const p2 = person('ron', date);
+p2.identify();
+// My name is ron and I was born at 1990.8.16
+p1.mutateDateOfBirth({
+  year: 1960,
+  month: 10,
+  day: 8,
+});
+p1.identify();
+// My name is harry and I was born at 1960.10.8
+p2.identify();
+// My name is ron and I was born at 1960.10.8
+/**
+ * Assuming we don't have access to the source code of the person
+ * "class" (that is, assuming we don't have any idea about the
+ * implementation of the person class), we would expect `p2.identify();`
+ * to print:
+ *
+ * My name is ron and I was born at 1990.8.16
+ *
+ * Since we think `p1.mutateDateOfBirth` would have mutated only `p1`'s
+ * dateOfBirth. However, the reality is (the actual output of
+ * `p2.identify();` is):
+ *
+ * My name is ron and I was born at 1960.10.8
+ *
+ * The reason is simply _mutability_. As you can observe, mutability is
+ * (shared mutability I guess) is, in almost all cases, a bad thing.
+```
+
+Note that the same thing happens in Java as well. The reason is, the cause of this is _mutability of the objects_. It is not a peculiarity of JavaScript or something. In any programming language with mutable objects, this behavior happens. Java example:
+
+```java
+import java.util.Date;
+
+class Person {
+    private Date dateOfBirth;
+
+    public Person(Date dateOfBirth) {
+	    this.dateOfBirth = dateOfBirth;
+    }
+
+    public void sayDateOfBirth() {
+        System.out.println("I was born at "
+                            + (this.dateOfBirth.getYear() + 1900)
+                            + "."
+                            + this.dateOfBirth.getMonth()
+                            + "."
+                            + this.dateOfBirth.getDay()
+        );
+    }
+
+    public void changeDateOfBirth() {
+        this.dateOfBirth.setDate(this.dateOfBirth.getDate() + 10000);
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Date dob = new Date();
+        Person p1 = new Person(dob);
+        Person p2 = new Person(dob);
+        p1.sayDateOfBirth();
+        // Prints
+        // I was born at 2020.10.1
+        p2.sayDateOfBirth();
+        // Prints
+        // I was born at 2020.10.1
+        p1.changeDateOfBirth();
+        p2.sayDateOfBirth();
+        // Prints
+        // I was born at 2048.2.5
+    }
+}
+/**
+ * Again, even though we think that we have only changed `p1`'s date of
+ * birth, we observe that `p2`'s date of birth has changed as well.
+ */
+```
