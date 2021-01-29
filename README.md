@@ -727,9 +727,98 @@ public class Main {
 
 ----
 
-When a browser gets a 404 (HTTP NOT FOUND) for a favicon request, the browser WILL NOT try to make another HTTP request for the favicon _to that domain_, until the browser is restarted
-=========================================================================================================================================================================================
+# V8 (JavaScript Engine) "Caches" Serialized (Logged) Errors
 
-That is, until you quit the browser process and start it again. Opening an incognito window and trying the request again or clicking on "Developer Tools -> Application -> Clear storage -> Clear site data" DOES NOT work either. The only thing that works is to restart the browser. Until the browser has been restarted, the browser WILL NOT make an HTTP requests to get the favicon _from that domain_.
+Not sure if it is just V8, or this is something in the ECMAScript standard, but I observed this on Node.js v15.5.0 and Chromium 88.0.4324.96, both of which use V8.
 
-[Source](https://stackoverflow.com/a/43173871/3395831)
+The phenomenon is, when you log an `Error` instance, change the `message` property of it and log it again, the second log output is identical to the first log output, whereas I expected it to reflect the error with the new message.
+
+On the other hand, if you don't log an `Error` instance before, change the `message` property of it and then log it, the log will have the updated error message.
+
+This happens when the error is thrown as well. That is, if you have logged an error using `console.log`, changed the `message` property of the error and `throw`n the error, the terminal output as a result of the uncaught error will NOT include the updated `message` property.
+
+Following is an example with logging error two times vs. one time. You can create an example that logs the error one time and throws it, vs. throws the error without logging at all. The results will be the same:
+
+```javascript
+logErrorTestHelper('TWO TIMES');
+logErrorTestHelper('ONE TIME');
+
+
+function logErrorTestHelper(logAmount) {
+  const header = `TESTING LOGGING ERROR ${logAmount}`;
+  console.log(`BEGIN: ${header}`);
+
+  const error = Error('Hello');
+
+  logStringRepresentation(error);
+  // First log. Skip it if we will log only one time.
+  if (logAmount === 'TWO TIMES') logVariable(error);
+
+  const message = '. How are you?';
+  error.message += message;
+  console.log(`\nAppended "${message}" to error's 'message' property.`);
+
+  logStringRepresentation(error);
+  // Second log. The output will be identical to the first log's output
+  // if the error was logged previously. Check the output to verify
+  // this.
+  logVariable(error);
+
+  console.log(`END: ${header}`);
+}
+
+function logStringRepresentation(error) {
+  console.log('\nLogging error\'s string representation:');
+  console.log(error.toString());
+}
+
+function logVariable(error) {
+  console.log('\nLogging error:');
+  console.log(error);
+}
+```
+
+Output:
+
+```
+$ node error-log-test.js
+BEGIN: TESTING LOGGING ERROR TWO TIMES
+
+Logging error's string representation:
+Error: Hello
+
+Logging error:
+Error: Hello
+    at logErrorTestHelper (/path/to/error-log-test.js:9:17)
+    at Object.<anonymous> (/path/to/error-log-test.js:1:1)
+    <Rest of the call stack>
+
+Appended ". How are you?" to error's 'message' property.
+
+Logging error's string representation:
+Error: Hello. How are you?
+
+Logging error:
+Error: Hello
+    at logErrorTestHelper (/path/to/error-log-test.js:9:17)
+    at Object.<anonymous> (/path/to/error-log-test.js:1:1)
+    <Rest of the call stack>
+END: TESTING LOGGING ERROR TWO TIMES
+BEGIN: TESTING LOGGING ERROR ONE TIME
+
+Logging error's string representation:
+Error: Hello
+
+Appended ". How are you?" to error's 'message' property.
+
+Logging error's string representation:
+Error: Hello. How are you?
+
+Logging error:
+Error: Hello. How are you?
+    at logErrorTestHelper (/path/to/error-log-test.js:9:17)
+    at Object.<anonymous> (/path/to/error-log-test.js:2:1)
+    <Rest of the call stack>
+END: TESTING LOGGING ERROR ONE TIME
+$
+```

@@ -1,3 +1,12 @@
+When a browser gets a 404 (HTTP NOT FOUND) for a favicon request, the browser WILL NOT try to make another HTTP request for the favicon _to that domain_, until the browser is restarted
+=========================================================================================================================================================================================
+
+That is, until you quit the browser process and start it again. Opening an incognito window and trying the request again or clicking on "Developer Tools -> Application -> Clear storage -> Clear site data" DOES NOT work either. The only thing that works is to restart the browser. Until the browser has been restarted, the browser WILL NOT make an HTTP requests to get the favicon _from that domain_.
+
+[Source](https://stackoverflow.com/a/43173871/3395831)
+
+---
+
 Source Maps
 ===========
 Source maps are files understood by web browsers that maps a specific location (any location actually) in a minified file to its location in the original, source, un-minified file. This helps the developer much better understand where the source of the problem is and how to debug it.
